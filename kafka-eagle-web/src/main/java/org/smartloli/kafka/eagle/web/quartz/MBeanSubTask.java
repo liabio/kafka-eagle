@@ -58,9 +58,7 @@ public class MBeanSubTask extends Thread {
             MBean.OSTOTALMEMORY, MBean.OSFREEMEMORY, MBean.CPUUSED};
     private static final String[] BROKER_KPIS_OFFLINE = new String[]{MBean.MESSAGEIN, MBean.BYTEIN, MBean.BYTEOUT, MBean.BYTESREJECTED, MBean.FAILEDFETCHREQUEST, MBean.FAILEDPRODUCEREQUEST, MBean.TOTALFETCHREQUESTSPERSEC, MBean.TOTALPRODUCEREQUESTSPERSEC, MBean.REPLICATIONBYTESINPERSEC, MBean.REPLICATIONBYTESOUTPERSEC, MBean.PRODUCEMESSAGECONVERSIONS};
 
-    private ExecutorService executorService = new ThreadPoolExecutor(20, 60,
-            0L, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<Runnable>());
+    private ExecutorService executorService;
     /**
      * Kafka service interface.
      */
@@ -70,6 +68,11 @@ public class MBeanSubTask extends Thread {
      * Mx4j service interface.
      */
     private Mx4jService mx4jService = new Mx4jFactory().create();
+
+    public MBeanSubTask(ExecutorService executorService){
+        this.executorService = executorService;
+    }
+
 
     @Override
     public void run() {

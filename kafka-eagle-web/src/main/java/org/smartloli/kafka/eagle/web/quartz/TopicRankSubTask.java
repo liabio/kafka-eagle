@@ -74,9 +74,11 @@ public class TopicRankSubTask extends Thread {
      */
     private static Mx4jService mx4jService = new Mx4jFactory().create();
 
-    private ExecutorService executorService = new ThreadPoolExecutor(20, 60,
-            0L, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<Runnable>());
+    private ExecutorService executorService;
+
+    public TopicRankSubTask(ExecutorService executorService){
+        this.executorService = executorService;
+    }
 
     @Override
     public void run() {

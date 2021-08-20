@@ -47,7 +47,7 @@ public class MasterQuartz {
      */
     private KafkaService kafkaService = new KafkaFactory().create();
 
-    private ExecutorService executorService = new ThreadPoolExecutor(20, 60,
+    private ExecutorService executorService = new ThreadPoolExecutor(50, 100,
             0L, TimeUnit.MILLISECONDS,
             new LinkedBlockingQueue<Runnable>());
 
@@ -91,13 +91,13 @@ public class MasterQuartz {
 
     private void jobForStandaloneAllTasks() {
         // topic new TopicRankSubTask().start();
-        executorService.execute(new TopicRankSubTask());
+        executorService.execute(new TopicRankSubTask(executorService));
 
         // broker metrics new MetricsSubTask().start();
         executorService.execute(new MetricsSubTask());
 
         // broker mbean  new MBeanSubTask().start();
-        executorService.execute(new MBeanSubTask());
+        executorService.execute(new MBeanSubTask(executorService));
     }
 
     private void strategyForBrokerMetrics(String clusterAlias, List<String> workNodes) {
