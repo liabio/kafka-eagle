@@ -22,7 +22,7 @@
         <property name="jobDetail" ref="masterDetail"/>
         <property name="cronExpression">
             <!-- Perform task scheduling per 1min. -->
-            <value>0 0/1 * * * ?</value>
+            <value>0 0/5 * * * ?</value>
         </property>
     </bean>
     <bean id="masterCleanTrigger"

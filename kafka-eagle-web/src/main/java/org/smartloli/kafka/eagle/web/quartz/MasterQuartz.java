@@ -28,6 +28,10 @@ import org.smartloli.kafka.eagle.web.controller.StartupListener;
 import org.smartloli.kafka.eagle.web.service.impl.MetricsServiceImpl;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Used to periodically generate all tasks and issue work node execution policy.
@@ -42,6 +46,10 @@ public class MasterQuartz {
      * Service interface area, include  {@link KafkaService}.
      */
     private KafkaService kafkaService = new KafkaFactory().create();
+
+    private ExecutorService executorService = new ThreadPoolExecutor(20, 60,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>());
 
     private static final String[] MBEAN_TASK_KEYS = new String[]{MBean.MESSAGEIN, MBean.BYTEIN, MBean.BYTEOUT, MBean.BYTESREJECTED, MBean.FAILEDFETCHREQUEST, MBean.FAILEDPRODUCEREQUEST, MBean.TOTALFETCHREQUESTSPERSEC, MBean.TOTALPRODUCEREQUESTSPERSEC, MBean.REPLICATIONBYTESINPERSEC, MBean.REPLICATIONBYTESOUTPERSEC, MBean.PRODUCEMESSAGECONVERSIONS, MBean.OSTOTALMEMORY, MBean.OSFREEMEMORY, MBean.CPUUSED};
 
@@ -82,14 +90,14 @@ public class MasterQuartz {
     }
 
     private void jobForStandaloneAllTasks() {
-        // topic
-        new TopicRankSubTask().start();
+        // topic new TopicRankSubTask().start();
+        executorService.execute(new TopicRankSubTask());
 
-        // broker metrics
-        new MetricsSubTask().start();
+        // broker metrics new MetricsSubTask().start();
+        executorService.execute(new MetricsSubTask());
 
-        // broker mbean
-        new MBeanSubTask().start();
+        // broker mbean  new MBeanSubTask().start();
+        executorService.execute(new MBeanSubTask());
     }
 
     private void strategyForBrokerMetrics(String clusterAlias, List<String> workNodes) {

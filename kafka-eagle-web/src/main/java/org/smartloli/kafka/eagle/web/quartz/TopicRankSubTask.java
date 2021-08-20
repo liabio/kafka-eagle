@@ -38,6 +38,12 @@ import org.smartloli.kafka.eagle.web.controller.StartupListener;
 import org.smartloli.kafka.eagle.web.service.impl.DashboardServiceImpl;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Collector topic logsize, capacity etc.
@@ -68,29 +74,33 @@ public class TopicRankSubTask extends Thread {
      */
     private static Mx4jService mx4jService = new Mx4jFactory().create();
 
+    private ExecutorService executorService = new ThreadPoolExecutor(20, 60,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>());
+
     @Override
     public void run() {
         this.topicRankQuartz();
     }
 
     private void topicRankQuartz() {
-        // logsize thread
-        new LogsizeStatsSubThread().start();
+        // logsize thread  new LogsizeStatsSubThread().start();
+        executorService.execute(new LogsizeStatsSubThread());
 
-        // capacity thread
-        new CapacityStatsSubThread().start();
+        // capacity thread new CapacityStatsSubThread().start();
+        executorService.execute(new CapacityStatsSubThread());
 
-        // producer logsize
-        new ProducerLogSizeStatsSubThread().start();
+        // producer logsize  new ProducerLogSizeStatsSubThread().start();
+        executorService.execute(new ProducerLogSizeStatsSubThread());
 
-        // performance topic
-        new PerformanceByTopicStatsSubThread().start();
+        // performance topic  new PerformanceByTopicStatsSubThread().start();
+        executorService.execute(new PerformanceByTopicStatsSubThread());
 
-        // topic clean
-        new CleanSubThread().start();
+        // topic clean  new CleanSubThread().start();
+        executorService.execute(new PerformanceByTopicStatsSubThread());
 
-        // topic throughput
-        new TopicThroughputThread().start();
+        // topic throughput new TopicThroughputThread().start();
+        executorService.execute(new TopicThroughputThread());
     }
 
     class TopicThroughputThread extends Thread {
@@ -256,6 +266,7 @@ public class TopicRankSubTask extends Thread {
                 this.topicLogsizeStats();
             } catch (Exception e) {
                 ErrorUtils.print(this.getClass()).error("Collector topic logsize has error, msg is ", e);
+                Thread.interrupted();
             }
         }
 

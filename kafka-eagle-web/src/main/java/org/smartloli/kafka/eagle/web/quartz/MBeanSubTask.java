@@ -34,6 +34,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Per mins to stats mbean from kafka jmx.
@@ -54,6 +58,9 @@ public class MBeanSubTask extends Thread {
             MBean.OSTOTALMEMORY, MBean.OSFREEMEMORY, MBean.CPUUSED};
     private static final String[] BROKER_KPIS_OFFLINE = new String[]{MBean.MESSAGEIN, MBean.BYTEIN, MBean.BYTEOUT, MBean.BYTESREJECTED, MBean.FAILEDFETCHREQUEST, MBean.FAILEDPRODUCEREQUEST, MBean.TOTALFETCHREQUESTSPERSEC, MBean.TOTALPRODUCEREQUESTSPERSEC, MBean.REPLICATIONBYTESINPERSEC, MBean.REPLICATIONBYTESOUTPERSEC, MBean.PRODUCEMESSAGECONVERSIONS};
 
+    private ExecutorService executorService = new ThreadPoolExecutor(20, 60,
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>());
     /**
      * Kafka service interface.
      */
@@ -73,17 +80,17 @@ public class MBeanSubTask extends Thread {
         if (SystemConfigUtils.getBooleanProperty("kafka.eagle.metrics.charts")) {
             String[] clusterAliass = SystemConfigUtils.getPropertyArray("kafka.eagle.zk.cluster.alias", ",");
             for (String clusterAlias : clusterAliass) {
-                // kafka cluster
-                new KafkaClusterSubThread(clusterAlias).start();
+                // kafka cluster  new KafkaClusterSubThread(clusterAlias).start();
+                executorService.execute(new KafkaClusterSubThread(clusterAlias));
 
-                // zookeeper cluster
-                new ZookeeperClusterSubThread(clusterAlias).start();
+                // zookeeper cluster  new ZookeeperClusterSubThread(clusterAlias).start();
+                executorService.execute(new ZookeeperClusterSubThread(clusterAlias));
 
-                // broker mbean offline
-                new MbeanOfflineSubThread(clusterAlias).start();
+                // broker mbean offline  new MbeanOfflineSubThread(clusterAlias).start();
+                executorService.execute(new MbeanOfflineSubThread(clusterAlias));
 
-                // detect connect uri
-                new DetectConnectUriSubThread(clusterAlias).start();
+                // detect connect uri  new DetectConnectUriSubThread(clusterAlias).start();
+                executorService.execute(new DetectConnectUriSubThread(clusterAlias));
             }
         }
     }
@@ -101,6 +108,7 @@ public class MBeanSubTask extends Thread {
                 this.kafkaCluster(this.cluster);
             } catch (Exception e) {
                 ErrorUtils.print(this.getClass()).error("Get kafka cluster metrics has error, msg is ", e);
+                Thread.interrupted();
             }
         }
 
@@ -230,6 +238,7 @@ public class MBeanSubTask extends Thread {
                 this.zkCluster(this.cluster);
             } catch (Exception e) {
                 ErrorUtils.print(this.getClass()).error("Get zookeeper cluster metrics has error, msg is ", e);
+                Thread.interrupted();
             }
         }
 
@@ -274,16 +283,16 @@ public class MBeanSubTask extends Thread {
         private void zkAssembly(ZkClusterInfo zkInfo, String type, KpiInfo kpiInfo) {
             switch (type) {
                 case zk_packets_received:
-                    kpiInfo.setValue(Long.parseLong(StrUtils.isNull(kpiInfo.getValue()) == true ? "0" : kpiInfo.getValue()) + Long.parseLong(StrUtils.isNull(zkInfo.getZkPacketsReceived()) == true ? "0" : zkInfo.getZkPacketsReceived()) + "");
+                    kpiInfo.setValue(Float.parseFloat(StrUtils.isNull(kpiInfo.getValue()) == true ? "0" : kpiInfo.getValue()) + Float.parseFloat(StrUtils.isNull(zkInfo.getZkPacketsReceived()) == true ? "0" : zkInfo.getZkPacketsReceived()) + "");
                     break;
                 case zk_packets_sent:
-                    kpiInfo.setValue(Long.parseLong(StrUtils.isNull(kpiInfo.getValue()) == true ? "0" : kpiInfo.getValue()) + Long.parseLong(StrUtils.isNull(zkInfo.getZkPacketsSent()) == true ? "0" : zkInfo.getZkPacketsSent()) + "");
+                    kpiInfo.setValue(Float.parseFloat(StrUtils.isNull(kpiInfo.getValue()) == true ? "0" : kpiInfo.getValue()) + Float.parseFloat(StrUtils.isNull(zkInfo.getZkPacketsSent()) == true ? "0" : zkInfo.getZkPacketsSent()) + "");
                     break;
                 case zk_num_alive_connections:
-                    kpiInfo.setValue(Long.parseLong(StrUtils.isNull(kpiInfo.getValue()) == true ? "0" : kpiInfo.getValue()) + Long.parseLong(StrUtils.isNull(zkInfo.getZkNumAliveConnections()) == true ? "0" : zkInfo.getZkNumAliveConnections()) + "");
+                    kpiInfo.setValue(Float.parseFloat(StrUtils.isNull(kpiInfo.getValue()) == true ? "0" : kpiInfo.getValue()) + Float.parseFloat(StrUtils.isNull(zkInfo.getZkNumAliveConnections()) == true ? "0" : zkInfo.getZkNumAliveConnections()) + "");
                     break;
                 case zk_outstanding_requests:
-                    kpiInfo.setValue(Long.parseLong(StrUtils.isNull(kpiInfo.getValue()) == true ? "0" : kpiInfo.getValue()) + Long.parseLong(StrUtils.isNull(zkInfo.getZkOutstandingRequests()) == true ? "0" : zkInfo.getZkOutstandingRequests()) + "");
+                    kpiInfo.setValue(Float.parseFloat(StrUtils.isNull(kpiInfo.getValue()) == true ? "0" : kpiInfo.getValue()) + Float.parseFloat(StrUtils.isNull(zkInfo.getZkOutstandingRequests()) == true ? "0" : zkInfo.getZkOutstandingRequests()) + "");
                     break;
                 default:
                     break;
@@ -305,6 +314,7 @@ public class MBeanSubTask extends Thread {
                 this.brokerMbeanOffline(this.cluster);
             } catch (Exception e) {
                 ErrorUtils.print(this.getClass()).error("Get broker mbean metrics has error, msg is ", e);
+                Thread.interrupted();
             }
         }
 
@@ -451,6 +461,7 @@ public class MBeanSubTask extends Thread {
                 this.detectConnectUri(this.cluster);
             } catch (Exception e) {
                 ErrorUtils.print(this.getClass()).error("Get kafka connect uri has error, msg is ", e);
+                Thread.interrupted();
             }
         }
 

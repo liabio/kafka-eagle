@@ -23,8 +23,8 @@
 		<property name="url" value="${kafka.eagle.url}" />
 		<property name="username" value="${kafka.eagle.username}" />
 		<property name="password" value="${kafka.eagle.password}" />
-		<property name="maxActive" value="100" />
-		<property name="initialSize" value="1" />
+		<property name="maxActive" value="50" />
+		<property name="initialSize" value="10" />
 		<property name="maxWait" value="180000" />
 		<property name="minIdle" value="1" />
 
